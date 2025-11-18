@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lava.fullname" . }}-worker
+  labels:
+    app.kubernetes.io/component: worker
+    {{- include "lava.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: worker
+      {{- include "lava.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: worker
+        {{- include "lava.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "lava.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: worker
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python3", "-m", "celery", "-A", "lava_server", "worker", "--loglevel=info"]
+          env:
+            - name: ALLOWED_HOSTS
+              value: "{{ .Values.lava.fqdn }},localhost,127.0.0.1,10.244.0.*,{{ include "lava.fullname" . }},{{ include "lava.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lava.fullname" . }}-config
+                  key: secret-key
+            {{- if .Values.lava.databaseUrl }}
+            - name: DATABASE_URL
+              value: {{ .Values.lava.databaseUrl | quote }}
+            {{- end }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: lava-data
+              mountPath: /lava-server
+          {{- end }}
+          resources:
+            {{- if .Values.resources }}
+            {{- toYaml .Values.resources | nindent 12 }}
+            {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: lava-data
+          persistentVolumeClaim:
+            claimName: {{ include "lava.fullname" . }}-data
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

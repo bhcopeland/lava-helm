@@ -1,0 +1,41 @@
+# Declared before as the tpl can't pick up the root
+# nodes inside the loop
+{{- $fullname := include "lava.fullname" . -}}
+{{- $namespace := .Release.Namespace -}}
+{{- $labels := include "lava.labels" . -}}
+{{- if .Values.autoscaling.enabled }}
+{{- range $key, $value := .Values.autoscaling.services }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ print $fullname "-" $key }}
+  namespace: {{ $namespace | quote }}
+  labels:
+    {{ $labels | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ print $fullname "-" $key }}
+  minReplicas: {{ $value.minReplicas }}
+  maxReplicas: {{ $value.maxReplicas }}
+  metrics:
+    {{- if $value.targetCPU }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $value.targetCPU }}
+    {{- end }}
+    {{- if $value.targetMemory }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $value.targetMemory }}
+    {{- end }}
+---
+{{- end }}
+{{- end }}

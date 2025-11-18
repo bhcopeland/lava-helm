@@ -1,0 +1,108 @@
+# Production LAVA deployment example
+# This configuration includes production-ready settings for a high-availability LAVA instance
+
+# Production instance configuration
+environment: "production"
+fqdn: "lava.company.com"
+
+# Image configuration with specific version pinning
+image:
+  repository: "docker.io/lavasoftware/lava-server"
+  tag: "2025.06"
+  pullPolicy: IfNotPresent
+
+# Use large resource sizing for production workloads
+size: "large"
+
+# Enable autoscaling for high availability
+autoscaling:
+  enabled: true
+  services:
+    server:
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 70
+
+# Production resource requests and limits
+resources:
+  server:
+    large:
+      requests:
+        cpu: 2
+        memory: "4Gi"
+      limits:
+        cpu: 4
+        memory: "8Gi"
+  publisher:
+    large:
+      requests:
+        cpu: 0.5
+        memory: "1Gi"
+      limits:
+        cpu: 1
+        memory: "2Gi"
+  scheduler:
+    large:
+      requests:
+        cpu: 0.5
+        memory: "1Gi"
+      limits:
+        cpu: 1
+        memory: "2Gi"
+  worker:
+    large:
+      requests:
+        cpu: 1
+        memory: "2Gi"
+      limits:
+        cpu: 2
+        memory: "4Gi"
+
+# Enable cleanup with production settings
+cleanup:
+  enabled: true
+  logsOnly: false  # Clean all old data in production
+
+# Disable maintenance mode for production
+maintenance:
+  enabled: false
+
+# Production storage requirements
+storage:
+  size:
+    device-types: 5Gi
+    devices: 10Gi
+    health-checks: 5Gi
+    dispatcher: 50Gi
+    job-output: 200Gi
+  backups:
+    enabled: true
+    bucketName: "lava-production-backups"
+
+# Production node selection and affinity
+nodeSelector:
+  node-type: "lava-production"
+
+# Enable high-performance configuration
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+# Security context for production
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+
+# Service account configuration
+serviceAccount:
+  create: true
+  automount: false
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/lava-production-role"

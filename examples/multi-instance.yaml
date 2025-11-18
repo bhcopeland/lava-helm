@@ -1,0 +1,91 @@
+# Multi-instance LAVA deployment example
+# This shows how to deploy multiple LAVA instances for different purposes
+#
+# Usage:
+# helm install lava-staging ./charts/lava -f examples/multi-instance.yaml --set instance.name=staging
+# helm install lava-production ./charts/lava -f examples/multi-instance.yaml --set instance.name=production
+# helm install lava-testing ./charts/lava -f examples/multi-instance.yaml --set instance.name=testing
+
+# Instance-specific configuration
+# This can be overridden with --set instance.name=<name>
+instance:
+  name: "staging"
+
+# Common configuration for all instances
+image:
+  repository: "docker.io/lavasoftware/lava-server"
+  pullPolicy: IfNotPresent
+
+# Instance-specific settings based on instance name
+# Staging configuration
+staging:
+  environment: "staging"
+  fqdn: "staging.lava.company.com"
+  size: "default"
+  image:
+    tag: "2025.06"
+  autoscaling:
+    enabled: false
+  storage:
+    size:
+      device-types: 2Gi
+      devices: 5Gi
+      health-checks: 2Gi
+      dispatcher: 10Gi
+      job-output: 20Gi
+  nodeSelector:
+    node-type: "lava-staging"
+
+# Production configuration
+production:
+  environment: "production"
+  fqdn: "lava.company.com"
+  size: "large"
+  image:
+    tag: "2025.06"
+  autoscaling:
+    enabled: true
+  storage:
+    size:
+      device-types: 5Gi
+      devices: 20Gi
+      health-checks: 5Gi
+      dispatcher: 100Gi
+      job-output: 500Gi
+    backups:
+      enabled: true
+      bucketName: "lava-production-backups"
+  nodeSelector:
+    node-type: "lava-production"
+
+# Testing configuration
+testing:
+  environment: "testing"
+  fqdn: "testing.lava.company.com"
+  size: "default"
+  image:
+    tag: "2025.10.dev0070"  # Development version for testing
+  autoscaling:
+    enabled: false
+  storage:
+    size:
+      device-types: 1Gi
+      devices: 2Gi
+      health-checks: 1Gi
+      dispatcher: 5Gi
+      job-output: 10Gi
+  nodeSelector:
+    node-type: "lava-testing"
+  # Enable maintenance mode for testing migrations
+  maintenance:
+    enabled: false
+
+# These will be populated based on the instance name
+# In a real deployment, you would use a tool like Helmfile or ArgoCD
+# to template these values based on the instance configuration
+environment: "{{ .Values.staging.environment }}"
+fqdn: "{{ .Values.staging.fqdn }}"
+size: "{{ .Values.staging.size }}"
+autoscaling: "{{ .Values.staging.autoscaling }}"
+storage: "{{ .Values.staging.storage }}"
+nodeSelector: "{{ .Values.staging.nodeSelector }}"

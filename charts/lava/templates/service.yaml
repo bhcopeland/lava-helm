@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "lava.fullname" . }}-server
+  labels:
+    {{- include "lava.labels" . | nindent 4 }}
+  annotations:
+    kube-score/ignore: service-targets-pod # Broken in kube-score v1.17
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/component: server
+    {{- include "lava.selectorLabels" . | nindent 4 }}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "lava.fullname" . }}-publisher
+  labels:
+    {{- include "lava.labels" . | nindent 4 }}
+  annotations:
+    kube-score/ignore: service-targets-pod
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5500
+      targetPort: publisher
+      protocol: TCP
+      name: publisher
+    - port: 5557
+      targetPort: master-socket
+      protocol: TCP
+      name: master-socket
+    - port: 8001
+      targetPort: ws
+      protocol: TCP
+      name: ws
+  selector:
+    app.kubernetes.io/component: publisher
+    {{- include "lava.selectorLabels" . | nindent 4 }}

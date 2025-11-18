@@ -1,0 +1,13 @@
+# Minimal LAVA deployment - just change the fqdn and you're ready to go
+lava:
+  fqdn: "my-lava.example.com"  # <- Change this to your domain
+
+# Optional: Enable ingress if you want external access
+ingress:
+  enabled: true
+  className: "nginx"  # Adjust for your ingress controller
+  hosts:
+    - host: my-lava.example.com  # Should match fqdn above
+      paths:
+        - path: /
+          pathType: ImplementationSpecific

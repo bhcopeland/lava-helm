@@ -1,0 +1,25 @@
+# Helm
+*.tgz
+charts/*/charts/
+charts/*/requirements.lock
+
+# Temporary files
+*~
+*.swp
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Build artifacts
+dist/
+build/
+
+# Log files
+*.log

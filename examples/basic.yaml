@@ -1,0 +1,82 @@
+# Basic LAVA deployment example
+# This is a minimal configuration suitable for testing and development
+
+# LAVA instance configuration
+lava:
+  fqdn: "lava.example.com"
+  environment: "development"
+
+# Image configuration
+image:
+  repository: "docker.io/lavasoftware/lava-server"
+  tag: "2025.06"
+  pullPolicy: IfNotPresent
+
+# Use default resource sizing
+size: "default"
+
+# Basic configuration
+config:
+  allowedHosts: "lava.example.com"  # Should match fqdn
+  # secretKey will be auto-generated
+  # databaseUrl defaults to SQLite for development
+
+# Enable health checks
+healthchecks:
+  liveness:
+    enabled: true
+  readiness:
+    enabled: true
+
+# Disable autoscaling for simplicity
+autoscaling:
+  enabled: false
+
+# Enable cleanup but keep it simple
+cleanup:
+  enabled: true
+  logsOnly: true
+
+# Disable maintenance mode
+maintenance:
+  enabled: false
+
+# Basic storage requirements
+storage:
+  size:
+    device-types: 1Gi
+    devices: 1Gi
+    health-checks: 1Gi
+    dispatcher: 2Gi
+    job-output: 5Gi
+
+# Enable ingress for web access
+ingress:
+  enabled: true
+  className: "nginx"  # Adjust for your ingress controller
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 32m
+  hosts:
+    - host: lava.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            port:
+              number: 80
+        - path: /ws/
+          pathType: Prefix
+          service:
+            port:
+              number: 8001
+
+# Simple node selection (adjust for your cluster)
+nodeSelector:
+  kubernetes.io/os: linux
+
+# No external dependencies
+externalSecrets:
+  enabled: false
+
+proxy:
+  enabled: false
